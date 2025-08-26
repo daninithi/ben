@@ -39,7 +39,7 @@ class CustomTextField extends StatelessWidget {
         onChanged: onChanged,
         focusNode: focusNode,
         obscureText: isPassword,
-        maxLines: maxLines,
+        maxLines: isPassword ? 1 : maxLines,
         minLines: minLines,
         decoration: InputDecoration(
           contentPadding: isChatText ? EdgeInsets.symmetric(horizontal: 12.w) : null,
