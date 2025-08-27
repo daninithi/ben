@@ -5,29 +5,21 @@ import 'package:flutter/material.dart';
 import 'dart:developer';
 
 class FirebaseMessagingService {
-  // Private constructor for singleton pattern
   FirebaseMessagingService._internal();
-
-  // Singleton instance
   static final FirebaseMessagingService _instance = FirebaseMessagingService._internal();
-
-  // Factory constructor to provide singleton instance
   factory FirebaseMessagingService.instance() => _instance;
 
-  // Reference to the database service for saving tokens
   final DatabaseService _databaseService = DatabaseService();
-
-  // Global navigator key for navigation
   static GlobalKey<NavigatorState>? navigatorKey;
 
-  /// Initialize Firebase Messaging and sets up all message listeners
+  /// Initialize Firebase Messaging
   Future<void> init() async {
-    // Listen for authentication state changes to get the user UID
+    log('Initializing Firebase Messaging Service');
+    
+    // Listen for authentication state changes
     FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user != null) {
-        log('User authenticated. Initializing FCM.');
-        // Handle FCM token after a user has signed in
-        // Pass the user.uid to the handler function
+        log('User authenticated. Initializing FCM for user: ${user.uid}');
         await _handlePushNotificationsToken(user.uid);
       } else {
         log('User is not authenticated. Skipping FCM token handling.');
@@ -40,86 +32,109 @@ class FirebaseMessagingService {
     // Listen for messages when the app is in foreground
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
 
-    // Listen for notification taps when the app is in background but not terminated
+    // Listen for notification taps when the app is in background
     FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
 
     // Check for initial message that opened the app from terminated state
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
+      log('App opened from terminated state with message: ${initialMessage.data}');
       _onMessageOpenedApp(initialMessage);
     }
   }
 
-  /// Retrieves and manages the FCM token for push notifications
+  /// Get and save FCM token
   Future<void> _handlePushNotificationsToken(String userId) async {
-    // Get the FCM token for the device
-    final token = await FirebaseMessaging.instance.getToken();
-    if (token != null) {
-      log('Push notifications token: $token');
-      // Save the token to the current user's Firestore document
-      await _databaseService.saveUserFcmToken(userId, token);
-    } else {
-      log('Failed to get FCM token.');
+    try {
+      // Get the FCM token for the device
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        log('FCM Token obtained: ${token.substring(0, 20)}...');
+        await _databaseService.saveUserFcmToken(userId, token);
+        log('FCM token saved for user: $userId');
+      } else {
+        log('Failed to get FCM token');
+      }
+
+      // Listen for token refresh events
+      FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
+        log('FCM token refreshed: ${fcmToken.substring(0, 20)}...');
+        await _databaseService.saveUserFcmToken(userId, fcmToken);
+      }).onError((error) {
+        log('Error refreshing FCM token: $error');
+      });
+    } catch (e) {
+      log('Error handling FCM token: $e');
     }
-
-    // Listen for token refresh events
-    FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
-      log('FCM token refreshed: $fcmToken');
-      // Update the token in Firestore for the current user
-      await _databaseService.saveUserFcmToken(userId, fcmToken);
-    }).onError((error) {
-      // Handle errors during token refresh
-      log('Error refreshing FCM token: $error');
-    });
   }
 
-  /// Requests notification permission from the user
+  /// Request notification permission
   Future<void> _requestPermission() async {
-    // Request permission for alerts, badges, and sounds
-    final result = await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    try {
+      final result = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
-    // Log the user's permission decision
-    log('User granted permission: ${result.authorizationStatus}');
+      log('Notification permission status: ${result.authorizationStatus}');
+      
+      if (result.authorizationStatus == AuthorizationStatus.authorized) {
+        log('User granted notification permissions');
+      } else if (result.authorizationStatus == AuthorizationStatus.provisional) {
+        log('User granted provisional notification permissions');
+      } else {
+        log('User declined or has not accepted notification permissions');
+      }
+    } catch (e) {
+      log('Error requesting notification permission: $e');
+    }
   }
 
-  /// Handles messages received while the app is in the foreground
+  /// Handle foreground messages
   void _onForegroundMessage(RemoteMessage message) {
-    log('Foreground message received: ${message.data.toString()}');
+    log('Foreground message received');
+    log('Message data: ${message.data}');
+    log('Notification: ${message.notification?.title} - ${message.notification?.body}');
+    
     final notificationData = message.notification;
     if (notificationData != null) {
-      // Handle foreground notification directly
-      log('Notification title: ${notificationData.title}');
-      log('Notification body: ${notificationData.body}');
-      
-      // Show in-app notification or handle as needed
       _showInAppNotification(message);
     }
   }
 
-  /// Handles notification taps when app is opened from the background or terminated state
+  /// Handle notification taps
   void _onMessageOpenedApp(RemoteMessage message) {
-    log('Notification caused the app to open: ${message.data.toString()}');
+    log('Notification opened app');
+    log('Message data: ${message.data}');
     
-    // Handle navigation based on notification data
     final chatId = message.data['chatId'];
     final senderId = message.data['senderId'];
     
     if (chatId != null && senderId != null) {
-      // Navigate to chat screen
       _navigateToChat(chatId, senderId);
     }
   }
 
-  /// Show in-app notification when app is in foreground
+  /// Show in-app notification
   void _showInAppNotification(RemoteMessage message) {
     if (navigatorKey?.currentContext != null) {
-      ScaffoldMessenger.of(navigatorKey!.currentContext!).showSnackBar(
+      final context = navigatorKey!.currentContext!;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${message.notification?.title}: ${message.notification?.body}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message.notification?.title ?? 'New Message',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(message.notification?.body ?? ''),
+            ],
+          ),
           action: SnackBarAction(
             label: 'Open',
             onPressed: () {
@@ -130,6 +145,7 @@ class FirebaseMessagingService {
               }
             },
           ),
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -137,15 +153,14 @@ class FirebaseMessagingService {
 
   /// Navigate to chat screen
   void _navigateToChat(String chatId, String senderId) {
-    // You'll need to implement this based on your routing
-    // This is just an example - adapt to your navigation structure
+    log('Navigate to chat: $chatId with sender: $senderId');
+    // Implement navigation logic based on your app structure
     if (navigatorKey?.currentContext != null) {
-      // Example navigation - adapt this to your app's structure
+      // Example: You might want to navigate to chat screen here
       // Navigator.of(navigatorKey!.currentContext!).pushNamed(
       //   '/chat',
       //   arguments: {'chatId': chatId, 'senderId': senderId},
       // );
-      log('Navigate to chat: $chatId with sender: $senderId');
     }
   }
 }

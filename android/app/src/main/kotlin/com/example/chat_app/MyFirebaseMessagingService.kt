@@ -28,14 +28,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d(TAG, "From: ${remoteMessage.from}")
+        Log.d(TAG, "Message data payload: ${remoteMessage.data}")
 
-        // Extract data from the message - matching your Cloud Function
+        // Extract data from the message
         val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "New Message"
         val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: ""
-        val chatId = remoteMessage.data["chatId"] // Match Cloud Function data keys
+        val chatId = remoteMessage.data["chatId"]
         val senderId = remoteMessage.data["senderId"]
+        val receiverId = remoteMessage.data["receiverId"]
 
-        Log.d(TAG, "Message data: chatId=$chatId, senderId=$senderId")
+        Log.d(TAG, "Message data: chatId=$chatId, senderId=$senderId, receiverId=$receiverId")
+        Log.d(TAG, "Notification: title=$title, body=$body")
 
         // Show notification
         sendNotification(title, body, chatId, senderId)
@@ -43,6 +46,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         Log.d(TAG, "Refreshed token: $token")
+        // Send token to your app server if needed
         // The Flutter plugin handles token updates automatically
     }
 
@@ -52,15 +56,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
                 description = CHANNEL_DESCRIPTION
                 enableLights(true)
-                lightColor = 0xFF6750A4.toInt() // Material 3 primary color
+                lightColor = 0xFF6750A4.toInt()
                 enableVibration(true)
                 setShowBadge(true)
                 vibrationPattern = longArrayOf(100, 200, 300, 400, 500)
+                setSound(
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    null
+                )
             }
 
             val notificationManager: NotificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+            
+            Log.d(TAG, "Notification channel created: $CHANNEL_ID")
         }
     }
 
@@ -71,15 +81,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         senderId: String?
     ) {
         val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            // Add extra data to handle when notification is clicked
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra("notification_click", true)
-            chatId?.let {
-                putExtra("chatId", it)
-            }
-            senderId?.let {
-                putExtra("senderId", it)
-            }
+            chatId?.let { putExtra("chatId", it) }
+            senderId?.let { putExtra("senderId", it) }
         }
 
         val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -98,7 +103,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // You can add custom icon later
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)
@@ -115,5 +120,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notificationBuilder.build())
+        
+        Log.d(TAG, "Notification sent with ID: $notificationId")
     }
 }
