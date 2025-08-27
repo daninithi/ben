@@ -122,7 +122,7 @@ class FirebaseMessagingService {
     if (navigatorKey?.currentContext != null) {
       final context = navigatorKey!.currentContext!;
       
-      ScaffoldMessenger.of(context).showSnackBar(
+      /* ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -147,7 +147,7 @@ class FirebaseMessagingService {
           ),
           duration: const Duration(seconds: 4),
         ),
-      );
+      ); */
     }
   }
 
