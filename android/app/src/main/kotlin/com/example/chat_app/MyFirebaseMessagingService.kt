@@ -103,18 +103,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(title)
-            .setContentText(messageBody)
-            .setAutoCancel(true)
-            .setSound(defaultSoundUri)
-            .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .setVibrate(longArrayOf(1000, 1000, 1000))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(messageBody))
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+        .setSmallIcon(R.drawable.ic_message_notification) // Changed this line
+        .setContentTitle(title)
+        .setContentText(messageBody)
+        .setAutoCancel(true)
+        .setSound(defaultSoundUri)
+        .setContentIntent(pendingIntent)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setDefaults(NotificationCompat.DEFAULT_ALL)
+        .setVibrate(longArrayOf(1000, 1000, 1000))
+        .setStyle(NotificationCompat.BigTextStyle().bigText(messageBody))
+        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+        .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
