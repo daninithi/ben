@@ -37,12 +37,6 @@ class SignUpViewModel extends BaseViewmodel {
     }
   }
 
-  // setEmail(String value) {
-  //   _email = value;
-  //   notifyListeners();
-  //   log("Name: $_email"); // Log the email for debugging
-  // }
-
   setName(String value) {
     _name = value;
     notifyListeners();

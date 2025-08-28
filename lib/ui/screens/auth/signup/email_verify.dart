@@ -60,6 +60,9 @@ class _EmailVerifyScreenState extends State<EmailVerifyScreen> {
             _loading
                 ? CircularProgressIndicator()
                 : ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                    ),
                     onPressed: _verifyOtp,
                     child: Text('Verify'),
                   ),

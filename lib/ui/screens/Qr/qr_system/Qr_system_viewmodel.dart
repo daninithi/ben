@@ -14,5 +14,4 @@ class QRSystemViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Add QR generation and scanning logic here as needed
 }

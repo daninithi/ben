@@ -1,6 +1,5 @@
 // Assets Paths
-const logo = "assets/logo.png";
-const frame = "assets/splash_frame.png";
+const logo = "assets/icon.jpg";
 
 // Route/Screen names
 const splash = "/splash";

@@ -49,7 +49,6 @@ class SignUpScreen extends StatelessWidget {
                           backgroundImage: FileImage(modal.image!),
                         ),
                    ),
-                   //Niroshan
                   CustomTextField(
                     hintText: "Enter your name",
                     onChanged: modal.setName,

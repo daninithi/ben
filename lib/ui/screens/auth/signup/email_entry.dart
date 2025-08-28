@@ -49,6 +49,9 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
             _loading
                 ? CircularProgressIndicator()
                 : ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                    ),
                     onPressed: _sendOtp,
                     child: Text('Send OTP'),
                   ),

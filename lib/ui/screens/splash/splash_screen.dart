@@ -4,7 +4,7 @@ import 'package:chat_app/core/constants/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-const String logo = 'assets/logo.png';
+const String logo = 'assets/icon.jpg';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,16 +36,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Image.asset( frame,
-            height: 1.sh,
-            width: 1.sw,
-            fit: BoxFit.cover,),
-          Center(
-            child: Image.asset(logo, height: 170, width: 170, fit: BoxFit.cover),
-          ),
-        ],
+      backgroundColor: Colors.white, // Set white background
+      body: Center(
+        child: Image.asset(
+          logo,
+          height: 50,
+          width: 50,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
