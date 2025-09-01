@@ -51,18 +51,18 @@ class _ChatScreenState extends State<ChatScreen> {
         listen: false,
       ).user;
       final receiver = widget.receiver;
-      
+
       if (currentUser != null && currentUser.uid != null) {
         try {
           // Reset unread counter for this chat in temporary_chats
           final chatIdList = [currentUser.uid, receiver.uid]..sort();
           final chatIdStr = chatIdList.join('_');
-          
+
           await FirebaseFirestore.instance
               .collection('temporary_chats')
               .doc(chatIdStr)
               .update({'unreadCounter_${currentUser.uid}': 0});
-          
+
           // Removed the redundant ChatService call since we're already doing it above
           print('Unread counter reset successfully');
         } catch (e) {
@@ -76,16 +76,16 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _checkChatExpiration() async {
     final currentUser = Provider.of<UserProvider>(context, listen: false).user;
     if (currentUser?.uid == null) return;
-    
+
     final chatIdList = [currentUser!.uid, widget.receiver.uid]..sort();
     final chatIdStr = chatIdList.join('_');
-    
+
     try {
       final tempChatRef = FirebaseFirestore.instance
           .collection('temporary_chats')
           .doc(chatIdStr);
       final tempChatDoc = await tempChatRef.get();
-      
+
       // Check if both users are contacts
       final contactDoc = await FirebaseFirestore.instance
           .collection('contacts')
@@ -93,7 +93,7 @@ class _ChatScreenState extends State<ChatScreen> {
           .collection('userContacts')
           .doc(widget.receiver.uid)
           .get();
-          
+
       if (contactDoc.exists) {
         setState(() {
           isContact = true;
@@ -107,7 +107,7 @@ class _ChatScreenState extends State<ChatScreen> {
           isContact = false;
         });
       }
-      
+
       if (tempChatDoc.exists) {
         final data = tempChatDoc.data();
         final Timestamp? createdAt = data?['createdAt'];
@@ -141,11 +141,11 @@ class _ChatScreenState extends State<ChatScreen> {
         timer.cancel();
         return;
       }
-      
+
       final now = DateTime.now();
       final diff = now.difference(chatStartTime!);
       final left = 30 - diff.inSeconds;
-      
+
       if (left <= 0) {
         setState(() {
           canChat = false;
@@ -176,14 +176,14 @@ class _ChatScreenState extends State<ChatScreen> {
               );
             }
           });
-          
+
           // Set contact request callback
           model.onContactRequestReceived = (request, requestId) {
             if (request['receiverUid'] == currentUser!.uid) {
               _showContactRequestDialog(request, requestId);
             }
           };
-          
+
           return Scaffold(
             body: Column(
               children: [
@@ -202,11 +202,13 @@ class _ChatScreenState extends State<ChatScreen> {
                             controller: _scrollController,
                             padding: const EdgeInsets.all(10),
                             itemCount: model.messages.length,
-                            separatorBuilder: (context, index) => 10.verticalSpace,
+                            separatorBuilder: (context, index) =>
+                                10.verticalSpace,
                             itemBuilder: (context, index) {
                               final message = model.messages[index];
                               return ChatBubble(
-                                isCurrentUser: message.senderId == currentUser!.uid,
+                                isCurrentUser:
+                                    message.senderId == currentUser!.uid,
                                 message: message,
                               );
                             },
@@ -251,7 +253,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // This method handles incoming contact requests (with parameters)
-  void _showContactRequestDialog(Map<String, dynamic> request, String requestId) {
+  void _showContactRequestDialog(
+      Map<String, dynamic> request, String requestId) {
     showDialog(
       context: context,
       builder: (context) {
@@ -277,7 +280,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   context,
                   listen: false,
                 ).user;
-                
+
                 await DatabaseService().updateContactRequestStatus(
                   requestId,
                   'accepted',
@@ -297,7 +300,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Contact added!')),
                 );
-                
+
                 // Refresh contact status
                 setState(() {
                   isContact = true;
@@ -331,7 +334,7 @@ class _ChatScreenState extends State<ChatScreen> {
         15.horizontalSpace,
         Text(name, style: h.copyWith(fontSize: 20.sp)),
         const Spacer(),
-        
+
         // Countdown timer to the left of person icon
         if (canChat && !isContact)
           Padding(
@@ -345,7 +348,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          
+
         // Show tick with person icon if already contacts, else show person+ icon
         if (isContact)
           Container(
@@ -393,16 +396,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          
-        // 3-dot icon
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8.r),
-            color: grey.withOpacity(0.15),
-          ),
-          child: const Icon(Icons.more_vert),
-        ),
       ],
     );
   }
@@ -429,7 +422,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   listen: false,
                 ).user;
                 final receiver = widget.receiver;
-                
+
                 await DatabaseService().sendContactRequest(
                   senderUid: currentUser!.uid!,
                   senderName: currentUser.name ?? '',

@@ -10,9 +10,9 @@ import 'package:file_picker/file_picker.dart';
 
 class BottomFeild extends StatelessWidget {
   const BottomFeild({
-    super.key, 
-    this.onTap, 
-    this.onChanged, 
+    super.key,
+    this.onTap,
+    this.onChanged,
     this.controller,
     this.onFilePicked,
   });
@@ -29,25 +29,26 @@ class BottomFeild extends StatelessWidget {
         type: type,
         allowMultiple: false,
       );
-      
+
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
-        
+
         // Check file size (limit to 10MB for example)
         if (file.size > 10 * 1024 * 1024) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('File size too large. Please select a file under 10MB.'),
+              content:
+                  Text('File size too large. Please select a file under 10MB.'),
               backgroundColor: Colors.red,
             ),
           );
           return;
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Selected: ${file.name}')),
         );
-        
+
         // Call the callback if provided
         onFilePicked?.call(file, type);
       }
@@ -61,58 +62,7 @@ class BottomFeild extends StatelessWidget {
     }
   }
 
-  void _showAttachmentOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: grey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-              16.verticalSpace,
-              ListTile(
-                leading: Icon(Icons.photo, color: Primary),
-                title: const Text('Photos'),
-                onTap: () => _pickFile(context, FileType.image),
-              ),
-              ListTile(
-                leading: Icon(Icons.videocam, color: Primary),
-                title: const Text('Videos'),
-                onTap: () => _pickFile(context, FileType.video),
-              ),
-              ListTile(
-                leading: Icon(Icons.insert_drive_file, color: Primary),
-                title: const Text('Document'),
-                onTap: () => _pickFile(context, FileType.any),
-              ),
-              ListTile(
-                leading: Icon(Icons.camera_alt, color: Primary),
-                title: const Text('Camera'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Camera feature coming soon!')),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // Removed unused _showAttachmentOptions function
 
   @override
   Widget build(BuildContext context) {
@@ -121,14 +71,7 @@ class BottomFeild extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 1.sw * 0.05, vertical: 20.h),
       child: Row(
         children: [
-          InkWell(
-            onTap: () => _showAttachmentOptions(context),
-            child: CircleAvatar(
-              radius: 20.r,
-              backgroundColor: white,
-              child: const Icon(Icons.add),
-            ),
-          ),
+          // Removed the '+' (add) button
           10.horizontalSpace,
           Expanded(
             child: CustomTextField(
@@ -147,8 +90,8 @@ class BottomFeild extends StatelessWidget {
 
 class ChatBubble extends StatelessWidget {
   const ChatBubble({
-    super.key, 
-    this.isCurrentUser = true, 
+    super.key,
+    this.isCurrentUser = true,
     required this.message,
     this.showTimestamp = true,
   });
@@ -170,9 +113,10 @@ class ChatBubble extends StatelessWidget {
             topRight: Radius.circular(16.r),
             bottomRight: Radius.circular(16.r),
           );
-    
-    final alignment = isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
-    
+
+    final alignment =
+        isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
+
     return Align(
       alignment: alignment,
       child: Container(
@@ -183,12 +127,12 @@ class ChatBubble extends StatelessWidget {
           borderRadius: borderRadius,
         ),
         child: Column(
-          crossAxisAlignment: isCurrentUser 
-              ? CrossAxisAlignment.start 
-              : CrossAxisAlignment.end,
+          crossAxisAlignment:
+              isCurrentUser ? CrossAxisAlignment.start : CrossAxisAlignment.end,
           children: [
             Text(
-              message.text ?? '', // Using message.text instead of message.content
+              message.text ??
+                  '', // Using message.text instead of message.content
               style: body.copyWith(
                 color: isCurrentUser ? white : null,
               ),
