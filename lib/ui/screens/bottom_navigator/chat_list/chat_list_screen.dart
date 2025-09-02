@@ -16,6 +16,8 @@ class ChatsListScreen extends StatefulWidget {
 }
 
 class _ChatsListScreenState extends State<ChatsListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
   final DatabaseService _db = DatabaseService();
 
   @override
@@ -83,12 +85,30 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
             child: Column(
               children: [
                 15.verticalSpace,
-                // Removed extra header 'chats' and spacing
+                // Search field
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search user...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.trim().toLowerCase();
+                      });
+                    },
+                  ),
+                ),
                 Expanded(
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(
                       vertical: 5,
-                      horizontal:0,
+                      horizontal: 0,
                     ),
                     itemCount: chatDocs.length,
                     separatorBuilder: (context, index) => 8.verticalSpace,
@@ -129,20 +149,29 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                               "content": chatData['lastMessage'],
                               "timestamp":
                                   chatData['lastMessageTimestamp'] != null
-                                  ? (chatData['lastMessageTimestamp']
-                                            as Timestamp)
-                                        .millisecondsSinceEpoch
-                                  : null,
+                                      ? (chatData['lastMessageTimestamp']
+                                              as Timestamp)
+                                          .millisecondsSinceEpoch
+                                      : null,
                             },
                             unreadCounter:
                                 chatData['unreadCounter_${currentUserUid}'] ??
-                                0,
+                                    0,
                           );
 
                           // ChatId for deletion
                           final chatIdList = [currentUserUid, otherUserId]
                             ..sort();
                           final chatIdStr = chatIdList.join('_');
+
+                          // Filter by search query
+                          if (_searchQuery.isNotEmpty &&
+                              !(userWithLastMessage.name
+                                      ?.toLowerCase()
+                                      .contains(_searchQuery) ??
+                                  false)) {
+                            return const SizedBox.shrink();
+                          }
 
                           return GestureDetector(
                             onLongPress: () async {

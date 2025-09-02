@@ -3,6 +3,11 @@ import 'package:chat_app/core/services/database_service.dart';
 import 'package:flutter/material.dart';
 
 class UserProvider extends ChangeNotifier {
+  void updateUser(UserModel newUser) {
+    _currentUser = newUser;
+    notifyListeners();
+  }
+
   final DatabaseService _db;
 
   UserProvider(this._db);
@@ -21,6 +26,4 @@ class UserProvider extends ChangeNotifier {
     _currentUser = null;
     notifyListeners(); // This is crucial to inform listeners of the change.
   }
-  
-
 }

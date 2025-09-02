@@ -32,8 +32,7 @@ class ProfileScreen extends StatelessWidget {
                           children: [
                             Padding(
                               padding: const EdgeInsets.only(left: 18.0),
-                              child:
-                                  userProvider.user!.imageUrl != null &&
+                              child: userProvider.user!.imageUrl != null &&
                                       userProvider.user!.imageUrl!.isNotEmpty
                                   ? CircleAvatar(
                                       radius: 40,
@@ -48,7 +47,7 @@ class ProfileScreen extends StatelessWidget {
                                         userProvider.user!.name?.isNotEmpty ==
                                                 true
                                             ? userProvider.user!.name![0]
-                                                  .toUpperCase()
+                                                .toUpperCase()
                                             : '',
                                         style: const TextStyle(
                                           fontSize: 32,
@@ -63,13 +62,82 @@ class ProfileScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Name : ${userProvider.user!.name ?? ''}',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Name : ${userProvider.user!.name ?? ''}',
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, size: 20),
+                                        tooltip: 'Edit Name',
+                                        onPressed: () async {
+                                          final TextEditingController
+                                              _nameController =
+                                              TextEditingController(
+                                                  text:
+                                                      userProvider.user!.name ??
+                                                          '');
+                                          final newName =
+                                              await showDialog<String>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('Edit Name'),
+                                              content: TextField(
+                                                controller: _nameController,
+                                                decoration:
+                                                    const InputDecoration(
+                                                        hintText:
+                                                            'Enter new name'),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.of(ctx).pop(),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.of(ctx).pop(
+                                                          _nameController.text
+                                                              .trim()),
+                                                  child: const Text('Save'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (newName != null &&
+                                              newName.isNotEmpty &&
+                                              newName !=
+                                                  userProvider.user!.name) {
+                                            // Update in Firestore
+                                            await DatabaseService()
+                                                .updateUserName(
+                                                    userProvider.user!.uid!,
+                                                    newName);
+                                            // Update locally
+                                            userProvider.updateUser(userProvider
+                                                .user!
+                                                .copyWith(name: newName));
+                                            // Force rebuild
+                                            (context as Element)
+                                                .markNeedsBuild();
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content:
+                                                      Text('Name updated!')),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 8),
                                   Text(

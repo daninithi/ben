@@ -3,12 +3,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DatabaseService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final _fire = FirebaseFirestore.instance;
-  
+  Future<void> updateUserName(String uid, String newName) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .update({'name': newName});
+  }
+  // Use FirebaseAuth.instance and FirebaseFirestore.instance directly
+
   Future<void> saveUserFcmToken(String userId, String token) async {
     try {
-      await _fire.collection('users').doc(userId).update({
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'fcmToken': token,
       });
       log("FCM token saved successfully for user: $userId");
@@ -16,7 +21,7 @@ class DatabaseService {
       log("Error saving FCM token: $e");
       // Fallback to set if the document doesn't exist yet
       try {
-        await _fire.collection('users').doc(userId).set({
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
           'fcmToken': token,
         }, SetOptions(merge: true));
         log("FCM token saved successfully using set for user: $userId");
@@ -33,7 +38,7 @@ class DatabaseService {
     Map<String, dynamic> contactData,
   ) async {
     try {
-      await _fire
+      await FirebaseFirestore.instance
           .collection('contacts')
           .doc(ownerUid)
           .collection('userContacts')
@@ -51,7 +56,10 @@ class DatabaseService {
     String status,
   ) async {
     try {
-      await _fire.collection('contact_requests').doc(requestId).update({
+      await FirebaseFirestore.instance
+          .collection('contact_requests')
+          .doc(requestId)
+          .update({
         'status': status,
       });
     } catch (e) {
@@ -66,7 +74,7 @@ class DatabaseService {
     required String receiverUid,
   }) async {
     try {
-      await _fire.collection('contact_requests').add({
+      await FirebaseFirestore.instance.collection('contact_requests').add({
         'senderUid': senderUid,
         'senderName': senderName,
         'receiverUid': receiverUid,
@@ -81,7 +89,7 @@ class DatabaseService {
 
   // Listen for incoming contact requests for a user
   Stream<QuerySnapshot> listenContactRequests(String receiverUid) {
-    return _fire
+    return FirebaseFirestore.instance
         .collection('contact_requests')
         .where('receiverUid', isEqualTo: receiverUid)
         .where('status', isEqualTo: 'pending')
@@ -90,7 +98,10 @@ class DatabaseService {
 
   Future<void> saveUser(Map<String, dynamic> userData) async {
     try {
-      await _fire.collection('users').doc(userData['uid']).set(userData);
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userData['uid'])
+          .set(userData);
       log("user saved successfully: ${userData['uid']}");
     } catch (e) {
       rethrow;
@@ -99,7 +110,8 @@ class DatabaseService {
 
   Future<Map<String, dynamic>?> loadUser(String uid) async {
     try {
-      final res = await _fire.collection('users').doc(uid).get();
+      final res =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (res.data() != null) {
         log("user fetched successfully: $uid");
         return res.data() as Map<String, dynamic>;
@@ -107,23 +119,26 @@ class DatabaseService {
     } catch (e) {
       rethrow;
     }
+    return null;
   }
 
   Future<List<Map<String, dynamic>>?> fetchUsers(String currentUserId) async {
     try {
-      final res = await _fire
-          .collection("users")
-          .where("uid", isNotEqualTo: currentUserId)
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('uid', isNotEqualTo: currentUserId)
           .get();
+      return querySnapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       log("Error fetching users: $e");
       rethrow;
     }
+    return null;
   }
 
   // Method to get all chat users for the current user (users with messages)
   Stream<QuerySnapshot> getChatUsers(String currentUserUid) {
-    return _fire
+    return FirebaseFirestore.instance
         .collection('chats')
         .where('participants', arrayContains: currentUserUid)
         .orderBy('lastMessageTime', descending: true)
@@ -138,7 +153,7 @@ class DatabaseService {
       final String chatId = '${sortedIds[0]}_${sortedIds[1]}';
 
       // Create or update the chat document
-      await _fire.collection('chats').doc(chatId).set({
+      await FirebaseFirestore.instance.collection('chats').doc(chatId).set({
         'participants': [user1Id, user2Id],
         'createdAt': FieldValue.serverTimestamp(),
         'lastMessageTime': FieldValue.serverTimestamp(),
@@ -152,21 +167,28 @@ class DatabaseService {
     }
   }
 
-
   // New method to create a temporary chat
-  Future<void> createTemporaryChat(String currentUserUid, String scannedUserUid) async {
+  Future<void> createTemporaryChat(
+      String currentUserUid, String scannedUserUid) async {
     try {
       // Create a unique chat ID by combining and sorting the UIDs
       List<String> userUids = [currentUserUid, scannedUserUid];
-      userUids.sort(); // Sort to ensure the chat ID is consistent regardless of who scanned whom
+      userUids
+          .sort(); // Sort to ensure the chat ID is consistent regardless of who scanned whom
       String chatId = userUids.join('_');
 
       // Check if a chat already exists to avoid duplication
-      DocumentSnapshot chatDoc = await _fire.collection('temporary_chats').doc(chatId).get();
+      DocumentSnapshot chatDoc = await FirebaseFirestore.instance
+          .collection('temporary_chats')
+          .doc(chatId)
+          .get();
 
       if (!chatDoc.exists) {
         // Create the new temporary chat document
-        await _fire.collection('temporary_chats').doc(chatId).set({
+        await FirebaseFirestore.instance
+            .collection('temporary_chats')
+            .doc(chatId)
+            .set({
           'participants': [currentUserUid, scannedUserUid],
           'lastMessage': '',
           'lastMessageTimestamp': FieldValue.serverTimestamp(),
@@ -184,9 +206,8 @@ class DatabaseService {
 
   // You will also need a method to get the current user's UID
   String? getCurrentUserUid() {
-    return _auth.currentUser?.uid;
+    return FirebaseAuth.instance.currentUser?.uid;
   }
-
 
   // In your recent chats ViewModel or Page
   Stream<QuerySnapshot> getTemporaryChats(String currentUserId) {
@@ -196,6 +217,4 @@ class DatabaseService {
         .orderBy('lastMessageTimestamp', descending: true)
         .snapshots();
   }
-
-  
 }
