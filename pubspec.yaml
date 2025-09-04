@@ -35,6 +35,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_screenutil: ^5.9.3
 
+  # Database
+  sqflite: ^2.0.0
+  path_provider: ^2.1.5
+
   # State Management
   provider: ^6.1.2
 

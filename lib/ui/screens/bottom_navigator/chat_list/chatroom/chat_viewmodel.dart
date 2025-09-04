@@ -5,6 +5,7 @@ import 'package:chat_app/core/models/user.dart';
 import 'package:chat_app/core/models/message.dart';
 import 'package:chat_app/core/services/database_service.dart';
 import 'package:chat_app/core/services/chat_service.dart';
+import 'package:chat_app/core/services/message_db_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -75,6 +76,8 @@ class ChatViewmodel extends BaseViewmodel {
         receiverId: _receiver.uid,
         timestamp: now,
       );
+      // Save message locally to Sqflite
+        await MessageDbHelper().insertMessage(message);
 
       // Save to the path that matches Cloud Function: chatRooms/{chatRoomId}/messages/{messageId}
       await _chatService.saveMessage(message.toMap(), chatRoomId);
